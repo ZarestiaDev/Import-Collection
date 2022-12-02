@@ -34,12 +34,12 @@ function import2022(sStats, sDesc)
 	-- GENERAL
 	-- Assume Name/CR next
 	ImportNPCManager.importHelperNameCr();
-
 	-- Assume Alignment/Size/Type next
 	ImportNPCManager.importHelperAlignmentSizeType();
-
 	-- Assume Initiative/Senses next
 	ImportNPCManager.importHelperInitiativeSenses();
+	-- Assume Aura next (optional)
+	ImportNPCManager.importHelperSimpleLine("aura");
 
 	-- DEFENSE
 	-- Assume Defense next
@@ -48,51 +48,51 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperDefOptional();
 
 	-- OFFENSE
+	ImportNPCManager.nextImportLine();
 	-- Assume Speed next
-	ImportNPCManager.importHelperSpeed();
-
+	ImportNPCManager.importHelperSimpleLine("speed");
 	-- Assume Attacks next
 	ImportNPCManager.importHelperAttack();
-
 	-- Assume Space/Reach next
 	ImportNPCManager.importHelperSpaceReach();
-
 	ImportNPCManager.importHelperSpecialAttacks();
-
 	-- Assume Spells next (optional)
 	ImportNPCManager.importHelperSpells();
 
 	-- STATISTICS
 	-- Assume Ability Scores next
 	ImportNPCManager.importHelperAbilityScores();
-
 	-- Assume BAB/CMB/CMD next
 	ImportNPCManager.importHelperBabCmbCmd();
-
 	-- Assume Feats next (optional)
-	ImportNPCManager.importHelperFeats();
-
+	ImportNPCManager.importHelperSimpleLine("feats");
 	-- Assume Skills next (optional)
-	ImportNPCManager.importHelperSkills();
-
+	ImportNPCManager.importHelperSimpleLine("skills");
 	-- Assume Languages next (optional)
-	ImportNPCManager.importHelperLanguage();
+	ImportNPCManager.importHelperSimpleLine("languages");
 
+	-- MISC
 	-- Assume SQ next (optional)
 	ImportNPCManager.importHelperSQ();
-
 	-- Assume Gear next (optional)
 	ImportNPCManager.importHelperGear();
 
+	-- ECOLOGY
+	ImportNPCManager.nextImportLine();
+	-- Assume Environment next (optional)
+	ImportNPCManager.importHelperSimpleLine("environment");
+	-- Assume Organization next (optional)
+	ImportNPCManager.importHelperSimpleLine("organization");
+	-- Assume Treasure next (optional)
+	ImportNPCManager.importHelperSimpleLine("treasure");
+
+	-- FINALIZING
 	-- Assume Special Abilities next
 	ImportNPCManager.importHelperSpecialAbilities();
-
 	-- Update Spellclass information
 	ImportNPCManager.finalizeSpellclass();
-
 	-- Update Description by adding the statblock text as well
 	ImportNPCManager.finalizeDescription();
-
 	-- Open new record window and matching campaign list
 	ImportUtilityManager.showRecord("npc", _tImportState.node);
 end
@@ -101,15 +101,25 @@ end
 --	Import section helper functions
 --
 
+function importHelperSimpleLine(sCategory)
+	ImportNPCManager.nextImportLine();
+
+	local sLine = _tImportState.sActiveLine:lower();
+	if sLine:match("^" .. sCategory) then
+		local sCategoryLine = sLine:gsub("^" .. sCategory .. "%s", "");
+		DB.setValue(_tImportState.node, sCategory, "string", StringManager.capitalize(sCategoryLine));
+	else
+		ImportNPCManager.previousImportLine();
+	end
+end
+
 function importHelperNameCr()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
 	local sName = sLine:gsub("%sCR.+", "");
 	local nCR = tonumber(sLine:match("CR%s(%d+)"));
-	if sLine:match("1/10") then
-		nCR = 0.1;
-	elseif sLine:match("1/8") then
+	if sLine:match("1/8") then
 		nCR = 0.125;
 	elseif sLine:match("1/6") then
 		nCR = 0.166;
@@ -126,8 +136,14 @@ function importHelperNameCr()
 end
 
 function importHelperAlignmentSizeType()
-	-- skip xp line
-	ImportNPCManager.nextImportLine(2);
+	ImportNPCManager.nextImportLine();
+	-- skip possible XP and Source lines
+	if _tImportState.sActiveLine:match("^Source") then
+		ImportNPCManager.nextImportLine();
+	end
+	if _tImportState.sActiveLine:match("^XP") then
+		ImportNPCManager.nextImportLine();
+	end
 
 	-- Handle optional race/class
 	if _tImportState.sActiveLine:match("%d+") then
@@ -148,12 +164,9 @@ function importHelperInitiativeSenses()
 	local sLine = _tImportState.sActiveLine;
 	local nInit = tonumber(sLine:match("Init%s(.?%d+)"));
 	local sSenses = sLine:match("Senses%s(.*)");
-	local sAura = sLine:match("Aura%s(.*)");
-	sSenses = sSenses:gsub(";?%s?Aura.*", "");
 
 	DB.setValue(_tImportState.node, "init", "number", nInit);
 	DB.setValue(_tImportState.node, "senses", "string", StringManager.capitalize(sSenses));
-	DB.setValue(_tImportState.node, "aura", "string", StringManager.capitalize(sAura));
 end
 
 function importHelperACHP()
@@ -198,15 +211,6 @@ function importHelperDefOptional()
 	sLine = sLine:gsub("Defensive Abilities%s?", "");
 
 	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(sLine));
-end
-
-function importHelperSpeed()
-	-- skip OFFENSE
-	ImportNPCManager.nextImportLine(2);
-
-	local sSpeed = _tImportState.sActiveLine:gsub("Speed%s?", "");
-
-	DB.setValue(_tImportState.node, "speed", "string", sSpeed);
 end
 
 function importHelperAttack()
@@ -405,46 +409,10 @@ function importHelperBabCmbCmd()
 	DB.setValue(_tImportState.node, "babgrp", "string", _tImportState.sActiveLine);
 end
 
-function importHelperFeats()
-	ImportNPCManager.nextImportLine();
-
-	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Feats?%s") then
-		local sFeats = sLine:gsub("Feats?%s", "");
-		DB.setValue(_tImportState.node, "feats", "string", sFeats);
-	else
-		ImportNPCManager.previousImportLine();
-	end
-end
-
-function importHelperSkills()
-	ImportNPCManager.nextImportLine();
-
-	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Skills?%s") then
-		local sSkills = sLine:gsub("Skills?%s", "");
-		sSkills = sSkills:gsub(";.*", "");
-
-		DB.setValue(_tImportState.node, "skills", "string", sSkills);
-	else
-		ImportNPCManager.previousImportLine();
-	end
-end
-
-function importHelperLanguage()
-	ImportNPCManager.nextImportLine();
-	if _tImportState.sActiveLine:match("Language") then
-		local sLanguages = _tImportState.sActiveLine:gsub("Languages?%s", "");
-		DB.setValue(_tImportState.node, "languages", "string", sLanguages);
-	else
-		ImportNPCManager.previousImportLine();
-	end
-end
-
 function importHelperSQ()
 	ImportNPCManager.nextImportLine();
-	if _tImportState.sActiveLine:match("SQ") then
-		local sSQ = _tImportState.sActiveLine:gsub("SQ%s", "");
+	if _tImportState.sActiveLine:match("^SQ") then
+		local sSQ = _tImportState.sActiveLine:gsub("^SQ%s", "");
 		local sExistingSQ = DB.getValue(_tImportState.node, "specialqualities", "");
 		if sExistingSQ ~= "" then
 			sSQ = sExistingSQ .. ", " .. sSQ;
@@ -460,7 +428,7 @@ function importHelperGear()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Gear") then
+	if sLine:match("^Gear") then
 		local sGear = sLine:gsub("Gear%s", "");
 		ImportNPCManager.addStatOutput("<h>Gear</h>");
 		ImportNPCManager.addStatOutput(string.format("<p>%s</p>", StringManager.capitalize(sGear)));
@@ -496,7 +464,6 @@ function importHelperSpecialAbilities()
 				ImportNPCManager.addStatOutput(string.format("<p><b>%s</b></p>", sLine));
 			end
 		else
-			ImportNPCManager.checkAddCreatureMagic(sLine);
 			ImportNPCManager.addStatOutput(string.format("<p>%s</p>" ,sLine));
 		end
 	end
