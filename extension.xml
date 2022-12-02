@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<root version="3.3" >
+	<properties>
+		<name>Feature: Import Collection</name>
+		<version>1.0</version>
+		<loadorder>50</loadorder>
+		<description>
+			<text>Import Collection</text>
+			<website></website>
+			<author>Zarestia</author>
+		</description>
+		<ruleset>
+			<name>PFRPG</name>
+		</ruleset>
+	</properties>
+
+	<announcement text="PFRPG Import Collection - v1.0 by Zarestia" font="emotefont" />
+
+	<base>
+	<!-- High-Level Scripts -->
+		<script name="ImportNPCManager" file="scripts/manager_import_npc.lua" />
+		<script name="DataLibraryImportCollection" file="scripts/data_library_PFRPG.lua" />
+
+	<!-- Campaign -->
+		<includefile source="campaign/import_npc.xml" />
+        <includefile source="campaign/template_campaign.xml" />
+        <includefile source="strings/strings.xml" />
+	</base>
+</root>
