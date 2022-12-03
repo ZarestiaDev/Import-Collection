@@ -231,59 +231,74 @@ function importHelperDefOptional()
 end
 
 function importHelperAttack()
-	-- Handle primary melee/ranged attacks
+	-- Handle melee attacks
 	ImportNPCManager.nextImportLine();
 
-	local sAttacks = _tImportState.sActiveLine:gsub("^Melee%s?", "");
-	if sAttacks:match(",") then
-		local tAttacks = StringManager.splitByPattern(sAttacks, ",");
-		local sPrimaryAttack = tAttacks[1];
-		local sFullAttack = sAttacks:gsub(",", " and");
+	local sMelee = _tImportState.sActiveLine:gsub("^Melee%s?", "");
+	local sMeleeAtk, sMeleeFullAtk = importHelperAttackFormat(sMelee);
+	local sRangedAtk = "";
+	local sRangedFullAtk = "";
 
-		DB.setValue(_tImportState.node, "atk", "string", sPrimaryAttack);
-		DB.setValue(_tImportState.node, "fullatk", "string", sFullAttack);
-	elseif sAttacks:match("%sor%s") then
-		local tAttacks = StringManager.splitByPattern(sAttacks, "%sor%s");
+	-- Check for optional ranged attacks
+	ImportNPCManager.nextImportLine();
+
+	local sRanged = _tImportState.sActiveLine;
+	if sRanged:match("Ranged") then
+	 	sRanged = sRanged:gsub("^Ranged%s?", "");
+		sRangedAtk, sRangedFullAtk = importHelperAttackFormat(sRanged);
+	else
+		ImportNPCManager.previousImportLine();
+	end
+
+	-- Clenaup Attacks
+	sMeleeAtk = sMeleeAtk:gsub("/.-%(", " (");
+	sRangedAtk = sRangedAtk:gsub("/.-%(", " (");
+	sRangedAtk = sRangedAtk:gsub("(%d+%s)%(", "%1ranged (");
+	sRangedFullAtk = sRangedFullAtk:gsub("(%d+%s)%(", "%1ranged (");
+
+	-- Merge Attacks
+	if sMeleeAtk and sRangedAtk ~= "" then
+		DB.setValue(_tImportState.node, "atk", "string", sMeleeAtk .. " or " .. sRangedAtk);
+	else
+		DB.setValue(_tImportState.node, "atk", "string", sMeleeAtk .. sRangedAtk);
+	end
+
+	-- Merge Full Attacks
+	if sMeleeFullAtk and sRangedFullAtk ~= "" then
+		DB.setValue(_tImportState.node, "fullatk", "string", sMeleeFullAtk .. " or " .. sRangedFullAtk);
+	else
+		DB.setValue(_tImportState.node, "fullatk", "string", sMeleeFullAtk .. sRangedFullAtk);
+	end
+end
+
+function importHelperAttackFormat(sAttackLine)
+	local sAtk = "";
+	local sFullAtk = "";
+
+	if sAttackLine:match(",") then
+		local tAttacks = StringManager.splitByPattern(sAttackLine, ",");
+		sAtk = tAttacks[1];
+		sFullAtk = sAttackLine:gsub(",", " and");
+	elseif sAttackLine:match("%sor%s") then
+		local tAttacks = StringManager.splitByPattern(sAttackLine, "%sor%s");
 		for _,vAttack in ipairs(tAttacks) do
-			if vAttack:match("/") then
-				DB.setValue(_tImportState.node, "fullatk", "string", vAttack);
+			if vAttack:match("/%+") then
+				sFullAtk = vAttack;
 			else
-				DB.setValue(_tImportState.node, "atk", "string", sAttacks);
+				sAtk = sAttackLine;
 				break;
 			end
 		end
+	else
+		if sAttackLine:match("/%+") then
+			sFullAtk = sAttackLine;
+			sAtk = sAttackLine;
+		else
+			sAtk = sAttackLine;
+		end
 	end
 
-	-- Clean up single Multiattacks
-	local sSingleAttack = DB.getValue(_tImportState.node, "atk", "");
-	sSingleAttack = sSingleAttack:gsub("/.-%(", " (");
-	DB.setValue(_tImportState.node, "atk", "string", sSingleAttack);
-
-	-- Check for optional secondary ranged attacks
-	-- ImportNPCManager.nextImportLine();
-
-	-- local sRanged = _tImportState.sActiveLine;
-	-- if sRanged:match("Ranged") then
-	-- 	sRanged = sRanged:gsub("Ranged%s?", "");
-	-- 	sRanged = sRanged:gsub("%s%+?-?%d+", "%1 ranged");
-	-- 	local sExistingSingle = DB.getValue(_tImportState.node, "atk", "");
-	-- 	if sRanged:match(",") then
-	-- 		local tRanged = StringManager.splitByPattern(sRanged, ",");
-	-- 		local sSingleRanged = tRanged[1];
-	-- 		sSingleRanged = sSingleRanged:gsub("^%d+%s", "");
-	-- 		sSingleRanged = sSingleRanged:gsub("s%s%+", " +");
-	-- 		local sFullRanged = sSingleRanged:gsub(",", " and");
-
-	-- 		local sExistingFull = DB.getValue(_tImportState.node, "fullatk", "");
-
-	-- 		DB.setValue(_tImportState.node, "atk", "string", sExistingSingle .. " or " .. sSingleRanged);
-	-- 		DB.setValue(_tImportState.node, "fullatk", "string", sExistingFull .. " or " .. sFullRanged);
-	-- 	else
-	-- 		DB.setValue(_tImportState.node, "atk", "string", sExistingSingle .. " or " .. sRanged);
-	-- 	end
-	-- else
-	-- 	ImportNPCManager.previousImportLine();
-	-- end
+	return sAtk, sFullAtk;
 end
 
 function importHelperSpaceReach()
