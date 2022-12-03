@@ -464,8 +464,10 @@ function importHelperGear()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("^Gear") then
-		local sGear = sLine:gsub("Gear%s", "");
+	if sLine:match("Gear") then
+		local sGear = sLine:gsub("Combat%sGear%s", "");
+		sGear = sGear:gsub("Other%sGear%s", "");
+		sGear = sGear:gsub("Gear%s", "");
 		ImportNPCManager.addStatOutput("<h>Gear</h>");
 		ImportNPCManager.addStatOutput(string.format("<p>%s</p>", StringManager.capitalize(sGear)));
 	else
