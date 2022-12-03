@@ -181,6 +181,12 @@ function importHelperACHP()
 	local nHP = sRemainder:match("%d+") or 0;
 	local sHD = sRemainder:match("%((.-)%)") or "";
 
+	-- Handle optional Regeneration
+	if sRemainder:match("regeneration") then
+		local sRegeneration = sRemainder:match("(regeneration%s%d+)");
+		DB.setValue(_tImportState.node, "specialqualities", "string", sRegeneration);
+	end
+
 	DB.setValue(_tImportState.node, "ac", "string", sAC);
 	DB.setValue(_tImportState.node, "hp", "number", nHP);
 	DB.setValue(_tImportState.node, "hd", "string", sHD);
@@ -208,9 +214,13 @@ function importHelperDefOptional()
 		ImportNPCManager.previousImportLine();
 		return;
 	end
-	sLine = sLine:gsub("Defensive Abilities%s?", "");
 
-	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(sLine));
+	local sExistingSQ = DB.getValue(_tImportState.node, "specialqualities", "");
+	if sExistingSQ ~= "" then
+		sExistingSQ = sExistingSQ .. ", ";
+	end
+
+	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(sExistingSQ .. sLine));
 end
 
 function importHelperAttack()
@@ -239,7 +249,6 @@ function importHelperAttack()
 
 	-- Clean up single Multiattacks
 	local sSingleAttack = DB.getValue(_tImportState.node, "atk", "");
-	Debug.chat("sSingleAttack", sSingleAttack)
 	sSingleAttack = sSingleAttack:gsub("/.-%(", " (");
 	DB.setValue(_tImportState.node, "atk", "string", sSingleAttack);
 
