@@ -220,12 +220,18 @@ function importHelperDefOptional()
 		sExistingSQ = sExistingSQ .. ", ";
 	end
 
-	-- check and skip optional Weaknesses because they're normally written in the SQ section
+	-- check optional Weaknesses
 	ImportNPCManager.nextImportLine();
 
-	if not _tImportState.sActiveLine:match("Weaknesses") then
+	local sNextLine = _tImportState.sActiveLine;
+	if sNextLine:match("Weaknesses") then
+		sLine = sLine .. ", " .. sNextLine;
+	else
 		ImportNPCManager.previousImportLine();
 	end
+
+	sLine = sLine:gsub("Defensive%sAbilities%s", "");
+	sLine = sLine:gsub("Weaknesses%s", "");
 
 	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(sExistingSQ .. sLine));
 end
