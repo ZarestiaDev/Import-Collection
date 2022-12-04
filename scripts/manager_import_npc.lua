@@ -210,7 +210,7 @@ function importHelperDefOptional()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("OFFENSE") then
+	if sLine:match("Offense") then
 		ImportNPCManager.previousImportLine();
 		return;
 	end
