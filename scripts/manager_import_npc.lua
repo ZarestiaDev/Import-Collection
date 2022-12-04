@@ -263,6 +263,11 @@ function importHelperAttack()
 	sRangedAtk = sRangedAtk:gsub("(%d+%s)%(", "%1ranged (");
 	sRangedFullAtk = sRangedFullAtk:gsub("(%d+%s)%(", "%1ranged (");
 
+	sMeleeAtk = StringManager.capitalize(sMeleeAtk);
+	sMeleeFullAtk = StringManager.capitalize(sMeleeFullAtk);
+	sRangedAtk = StringManager.capitalize(sRangedAtk);
+	sRangedFullAtk = StringManager.capitalize(sRangedFullAtk);
+
 	-- Merge Attacks
 	if sMeleeAtk and sRangedAtk ~= "" then
 		DB.setValue(_tImportState.node, "atk", "string", sMeleeAtk .. " or " .. sRangedAtk);
@@ -518,14 +523,10 @@ function importHelperSpecialAbilities()
 			break;
 		end
 
-		if sLine:match("%(Ex%)") or sLine:match("%(Su%)") or sLine:lower():match("special%sabilities") then
-			sLine = sLine:gsub("Copy link to clipboard%s?", "")
-			sLine = StringManager.capitalizeAll(sLine:lower());
-			if sLine:match("Special%ssAbilities") then
-				ImportNPCManager.addStatOutput(string.format("<h>%s</h>" ,sLine));
-			else
-				ImportNPCManager.addStatOutput(string.format("<p><b>%s</b></p>", sLine));
-			end
+		if sLine:match("%(Ex%)") or sLine:match("%(Su%)") then
+			sLine = sLine:gsub("(.-%(Ex%))", "<b>%1</b>");
+			sLine = sLine:gsub("(.-%(Su%))", "<b>%1</b>");
+			ImportNPCManager.addStatOutput(string.format("<p>%s</p>", sLine));
 		else
 			ImportNPCManager.addStatOutput(string.format("<p>%s</p>" ,sLine));
 		end
