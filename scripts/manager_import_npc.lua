@@ -257,9 +257,9 @@ function importHelperAttack()
 	end
 
 	-- Clenaup Attacks
-	sMeleeAtk = sMeleeAtk:gsub("/.-%(", " (");
+	sMeleeAtk = sMeleeAtk:gsub("/%+.-%(", " (");
 	sMeleeAtk = sMeleeAtk:gsub("^%d+%s(%a+)s", "%1");
-	sRangedAtk = sRangedAtk:gsub("/.-%(", " (");
+	sRangedAtk = sRangedAtk:gsub("/%+.-%(", " (");
 	sRangedAtk = sRangedAtk:gsub("(%d+%s)%(", "%1ranged (");
 	sRangedFullAtk = sRangedFullAtk:gsub("(%d+%s)%(", "%1ranged (");
 
@@ -291,9 +291,27 @@ function importHelperAttackFormat(sAttackLine)
 		for _,vAttack in ipairs(tAttacks) do
 			if vAttack:match("/%+") then
 				sFullAtk = vAttack;
+				sAtk = vAttack:gsub("/.-%(", " (");
+			elseif vAttack:match("^%d+") then
+				if sFullAtk ~= "" then
+					sFullAtk = sFullAtk .. " or " .. vAttack;
+				else
+					sFullAtk = vAttack;
+				end
+
+				-- Convert "2 Slams" into Slam for single attacks
+				local sAtkSingle = vAttack:gsub("^%d+%s(%a+)s", "%1");
+				if sAtk ~= "" then
+					sAtk = sAtk .. " or " .. sAtkSingle;
+				else
+					sAtk = sAtkSingle;
+				end
 			else
-				sAtk = sAttackLine;
-				break;
+				if sAtk ~= "" then
+					sAtk = sAtk .. " or " .. vAttack;
+				else
+					sAtk = vAttack;
+				end
 			end
 		end
 	else
