@@ -58,6 +58,8 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperSpecialAttacks();
 	-- Assume Spells next (optional)
 	ImportNPCManager.importHelperSpells();
+	-- Assume Tactics next (optional)
+	ImportNPCManager.importHelperTactics();
 
 	-- STATISTICS
 	-- Assume Ability Scores next
@@ -103,6 +105,10 @@ end
 
 function importHelperSimpleLine(sCategory)
 	ImportNPCManager.nextImportLine();
+
+	if not _tImportState.sActiveLine then
+		return;
+	end
 
 	local sLine = _tImportState.sActiveLine:lower();
 	if sLine:match("^" .. sCategory) then
@@ -210,7 +216,7 @@ function importHelperDefOptional()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Offense") then
+	if sLine:lower():match("offense") then
 		ImportNPCManager.previousImportLine();
 		return;
 	end
@@ -234,6 +240,28 @@ function importHelperDefOptional()
 	sLine = sLine:gsub("Weaknesses%s", "");
 
 	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(sExistingSQ .. sLine));
+end
+
+function importHelperTactics()
+	ImportNPCManager.nextImportLine();
+
+	if _tImportState.sActiveLine:lower():match("tactics") then
+		ImportNPCManager.addStatOutput("<h>Tactics</h>")
+
+		while not _tImportState.sActiveLine:lower():match("statistics") do
+			ImportNPCManager.nextImportLine();
+
+			local sLine = _tImportState.sActiveLine;
+			if not sLine or sLine == "" or sLine:lower():match("statistics") then
+				ImportNPCManager.previousImportLine();
+				break;
+			end
+
+			ImportNPCManager.addStatOutput(string.format("<p>%s</p>", sLine));
+		end
+	else
+		ImportNPCManager.previousImportLine();
+	end
 end
 
 function importHelperAttack()
@@ -366,7 +394,7 @@ function importHelperSpells()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Spell") then
+	if sLine:match("Spell") or sLine:match("At Will") then
 		ImportNPCManager.importHelperSpellcasting();
 	else
 		ImportNPCManager.previousImportLine();
