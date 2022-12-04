@@ -252,6 +252,7 @@ function importHelperAttack()
 
 	-- Clenaup Attacks
 	sMeleeAtk = sMeleeAtk:gsub("/.-%(", " (");
+	sMeleeAtk = sMeleeAtk:gsub("^%d+%s(%a+)s", "%1");
 	sRangedAtk = sRangedAtk:gsub("/.-%(", " (");
 	sRangedAtk = sRangedAtk:gsub("(%d+%s)%(", "%1ranged (");
 	sRangedFullAtk = sRangedFullAtk:gsub("(%d+%s)%(", "%1ranged (");
@@ -290,7 +291,7 @@ function importHelperAttackFormat(sAttackLine)
 			end
 		end
 	else
-		if sAttackLine:match("/%+") then
+		if sAttackLine:match("/%+") or sAttackLine:match("^%d+") then
 			sFullAtk = sAttackLine;
 			sAtk = sAttackLine;
 		else
