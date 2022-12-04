@@ -1,7 +1,7 @@
 <root>
 	<!-- Import -->
 	<string name="import_npc_title">Import - NPC</string>
-	<string name="import_mode_2022">2022 - PFRPG NPC</string>
+	<string name="import_mode_2022">2022 - Archives of Nethys</string>
 
 	<string name="ft_empty_import_statblock_npc">Paste the NPC statblock text here.
 				
