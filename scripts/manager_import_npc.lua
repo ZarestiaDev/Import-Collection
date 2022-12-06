@@ -406,7 +406,7 @@ function importHelperSpells()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Spell") or sLine:match("At Will") then
+	if sLine:match("Spell") or sLine:match("At Will") or sLine:match("Constant") then
 		ImportNPCManager.importHelperSpellcasting();
 	else
 		ImportNPCManager.previousImportLine();
@@ -428,12 +428,10 @@ function getLoadedModules()
 end
 
 function importHelperSpellcasting()
-	local nodeNPC = _tImportState.node;
-	local nodeNewSpellClass = nodeNPC.createChild("spellset").createChild();
+	local nodeNewSpellClass = _tImportState.node.createChild("spellset").createChild();
+	local nCL = tonumber(_tImportState.sActiveLine:match("CL%s(%d+)")) or 0;
 	
-	local nCL = tonumber(_tImportState.sActiveLine:match("CL%s(%d+)"));
-	
-	DB.setValue(nodeNewSpellClass, "label", "string", "Spells");
+	DB.setValue(nodeNewSpellClass, "label", "string", _tImportState.sActiveLine:gsub("%s?%b()", ""));
 	DB.setValue(nodeNewSpellClass, "cl", "number", nCL);
 
 	local tModules = getLoadedModules();
@@ -444,13 +442,20 @@ function importHelperSpellcasting()
 		if not sLine or sLine == "" or sLine:match("statistics") then
 			ImportNPCManager.previousImportLine();
 			break;
+		elseif sLine:match("^spell") then
+			ImportNPCManager.previousImportLine();
+			ImportNPCManager.importHelperSpells();
+			break;
 		end
 
-		local nSpellLevel = sLine:match("%d+");
+		local nSpellLevel = sLine:match("%d+") or 0;
 		local sSpells = sLine:match("-(%w+.*)");
-		local tSegments = StringManager.splitByPattern(sSpells, ",");
-		for _,sSpellName in ipairs(tSegments) do
-			ImportNPCManager.importHelperSearchSpell(nodeNewSpellClass, tModules, nSpellLevel, sSpellName);
+		if sSpells:match(",") then
+			for _,sSpellName in ipairs(StringManager.splitByPattern(sSpells, ",")) do
+				ImportNPCManager.importHelperSearchSpell(nodeNewSpellClass, tModules, nSpellLevel, sSpellName);
+			end
+		else
+			ImportNPCManager.importHelperSearchSpell(nodeNewSpellClass, tModules, nSpellLevel, sSpells);
 		end
 	end
 end
@@ -487,10 +492,7 @@ function importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity)
 	local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. nSpellLevel, 0);
 	DB.setValue(nodeSpellClass, "availablelevel" .. nSpellLevel, "number", nCurrentQuantity + nQuantity);
 
-	local nodeTargetLevelSpells = nodeSpellClass.createChild("levels.level" .. nSpellLevel .. ".spells");
-	local nodeNewSpell = nodeTargetLevelSpells.createChild();
-
-	DB.copyNode(nodeSpell, nodeNewSpell);
+	SpellManager.addSpell(nodeSpell, nodeSpellClass, nSpellLevel);
 end
 
 function importHelperAbilityScores()
