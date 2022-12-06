@@ -428,11 +428,11 @@ function getLoadedModules()
 end
 
 function importHelperSpellcasting()
-	local nodeNewSpellClass = _tImportState.node.createChild("spellset").createChild();
+	local nodeSpellClass = _tImportState.node.createChild("spellset").createChild();
 	local nCL = tonumber(_tImportState.sActiveLine:match("CL%s(%d+)")) or 0;
 	
-	DB.setValue(nodeNewSpellClass, "label", "string", _tImportState.sActiveLine:gsub("%s?%b()", ""));
-	DB.setValue(nodeNewSpellClass, "cl", "number", nCL);
+	DB.setValue(nodeSpellClass, "label", "string", _tImportState.sActiveLine:gsub("%s?%b()", ""));
+	DB.setValue(nodeSpellClass, "cl", "number", nCL);
 
 	local tModules = getLoadedModules();
 	
@@ -448,27 +448,32 @@ function importHelperSpellcasting()
 			break;
 		end
 
-		local nSpellLevel = sLine:match("%d+") or 0;
+		local sSpellLevel = sLine:match("^%d+") or 0;
 		local sSpells = sLine:match("-(%w+.*)");
+		sSpells = sSpells:gsub("%(dc.-%)", "");
+		sSpells = sSpells:gsub("'", "");
+
 		if sSpells:match(",") then
 			for _,sSpellName in ipairs(StringManager.splitByPattern(sSpells, ",")) do
-				ImportNPCManager.importHelperSearchSpell(nodeNewSpellClass, tModules, nSpellLevel, sSpellName);
+				ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName);
 			end
 		else
-			ImportNPCManager.importHelperSearchSpell(nodeNewSpellClass, tModules, nSpellLevel, sSpells);
+			ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpells);
 		end
 	end
 end
 
-function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellName)
-	local nDC = tonumber(sSpellName:match("dc%s(%d+)"));
-	sSpellName = sSpellName:gsub("%(dc.*%)", "");
+function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName)
 	local nQuantity = tonumber(sSpellName:match("(%d+)")) or 1;
 	sSpellName = sSpellName:gsub("%b()", "");
+	if sSpellName:match("^%s?mass") then
+		sSpellName = sSpellName:gsub("mass", "");
+		sSpellName = sSpellName .. "mass";
+	end
 	
 	local nodeSpellBook = DB.findNode("spelldesc." .. sSpellName:gsub("%s", "") .. '@*');
 	if nodeSpellBook then
-		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, nSpellLevel, nQuantity);
+		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, sSpellLevel, nQuantity);
 		return;
 	end
 
@@ -479,7 +484,7 @@ function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellNa
 				local sModuleSpellName = DB.getValue(nodeSpell, "name", "");
 				if sModuleSpellName ~= '' then
 					if sModuleSpellName == sSpellName then
-						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity);
+						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity);
 						break;
 					end
 				end
@@ -488,11 +493,11 @@ function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellNa
 	end
 end
 
-function importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity)
-	local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. nSpellLevel, 0);
-	DB.setValue(nodeSpellClass, "availablelevel" .. nSpellLevel, "number", nCurrentQuantity + nQuantity);
-
-	SpellManager.addSpell(nodeSpell, nodeSpellClass, nSpellLevel);
+function importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity)
+	local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. sSpellLevel, 0);
+	DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nCurrentQuantity + nQuantity);
+	
+	SpellManager.addSpell(nodeSpell, nodeSpellClass, tonumber(sSpellLevel));
 end
 
 function importHelperAbilityScores()
