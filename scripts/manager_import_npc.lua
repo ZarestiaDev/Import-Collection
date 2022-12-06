@@ -55,7 +55,7 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperAttack();
 	-- Assume Space/Reach next
 	ImportNPCManager.importHelperSpaceReach();
-	ImportNPCManager.importHelperSpecialAttacks();
+	ImportNPCManager.importHelperSimpleLine("special attacks");
 	-- Assume Spells next (optional)
 	ImportNPCManager.importHelperSpells();
 	-- Assume Tactics next (optional)
@@ -113,6 +113,7 @@ function importHelperSimpleLine(sCategory)
 	local sLine = _tImportState.sActiveLine:lower();
 	if sLine:match("^" .. sCategory) then
 		local sCategoryLine = sLine:gsub("^" .. sCategory .. "%s", "");
+		sCategory = sCategory:gsub("%s", "");
 		DB.setValue(_tImportState.node, sCategory, "string", StringManager.capitalize(sCategoryLine));
 	else
 		ImportNPCManager.previousImportLine();
@@ -399,18 +400,6 @@ function importHelperSpaceReach()
 	end
 
 	DB.setValue(_tImportState.node, "spacereach", "string", sSpaceReach);
-end
-
-function importHelperSpecialAttacks()
-	ImportNPCManager.nextImportLine();
-	
-	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Special Attacks") then
-		sLine = sLine:gsub("Special Attacks%s?", "");
-		DB.setValue(_tImportState.node, "specialattacks", "string", StringManager.capitalize(sLine));
-	else
-		ImportNPCManager.previousImportLine();
-	end
 end
 
 function importHelperSpells()
