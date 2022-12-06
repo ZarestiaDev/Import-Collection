@@ -289,6 +289,8 @@ function importHelperAttack()
 	sMeleeAtk = sMeleeAtk:gsub("^%d+%s(%a+)s", "%1");
 	sRangedAtk = sRangedAtk:gsub("/%+.-%(", " (");
 	sRangedAtk = sRangedAtk:gsub("(%d+%s)%(", "%1ranged (");
+	sMeleeFullAtk = sMeleeFullAtk:gsub(",", " and");
+	sRangedFullAtk = sRangedFullAtk:gsub(",", " and");
 	sRangedFullAtk = sRangedFullAtk:gsub("(%d+%s)%(", "%1ranged (");
 
 	sMeleeAtk = StringManager.capitalize(sMeleeAtk);
@@ -312,51 +314,72 @@ function importHelperAttack()
 end
 
 function importHelperAttackFormat(sAttackLine)
-	local sAtk = "";
-	local sFullAtk = "";
+	local sAtk, sFullAtk = "", "";
+	local bAnd, bOr, bFull, bMult = false, false, false, false;
 
 	if sAttackLine:match(",") then
-		local tAttacks = StringManager.splitByPattern(sAttackLine, ",");
-		sAtk = tAttacks[1];
-		sFullAtk = sAttackLine:gsub(",", " and");
-	elseif sAttackLine:match("%sor%s") then
-		local tAttacks = StringManager.splitByPattern(sAttackLine, "%sor%s");
-		for _,vAttack in ipairs(tAttacks) do
-			if vAttack:match("/%+") then
-				sFullAtk = vAttack;
-				sAtk = vAttack:gsub("/.-%(", " (");
-			elseif vAttack:match("^%d+") then
-				if sFullAtk ~= "" then
-					sFullAtk = sFullAtk .. " or " .. vAttack;
-				else
-					sFullAtk = vAttack;
-				end
+		bAnd = true;
+		sAtk, sFullAtk = ImportNPCManager.importHelperAttackFormatAnd(sAttackLine, sAtk, sFullAtk);
+	end
+	if sAttackLine:match("%sor%s") then
+		bOr = true;
+		sAtk, sFullAtk = ImportNPCManager.importHelperAttackFormatOr(sAttackLine, sAtk, sFullAtk);
+	end
+	if sAttackLine:match("/%+") then
+		bFull = true;
+	end
+	if sAttackLine:match("^%d+") then
+		bMult = true;
+	end
+	
+	if (bFull or bMult) and not (bAnd or bOr) then
+		sAtk = sAttackLine;
+		sFullAtk = sAttackLine;
+	elseif not (bAnd or bOr or bFull or bMult) then
+		sAtk = sAttackLine;
+	end
 
-				-- Convert "2 Slams" into Slam for single attacks
-				local sAtkSingle = vAttack:gsub("^%d+%s(%a+)s", "%1");
-				if sAtk ~= "" then
-					sAtk = sAtk .. " or " .. sAtkSingle;
-				else
-					sAtk = sAtkSingle;
-				end
-			else
-				if sAtk ~= "" then
-					sAtk = sAtk .. " or " .. vAttack;
-				else
-					sAtk = vAttack;
-				end
-			end
+	return sAtk, sFullAtk;
+end
+
+function importHelperAttackFormatAnd(sAttackLine, sAtk, sFullAtk)
+	sAtk = StringManager.splitByPattern(sAttackLine, ",")[1];
+	sFullAtk = sAttackLine;
+
+	return sAtk, sFullAtk;
+end
+
+function importHelperAttackFormatOr(sAttackLine, sAtk, sFullAtk)
+	for _,vAttack in ipairs(StringManager.splitByPattern(sAttackLine, "%sor%s")) do
+		if vAttack:match("/%+") then
+			sFullAtk = vAttack;
+			sAtk = vAttack:gsub("/.-%(", " (");
+		elseif vAttack:match("^%d+") then
+			sFullAtk = ImportNPCManager.importHelperAttackOrCheck(sFullAtk, vAttack);
+			-- Convert "2 Slams" into Slam for single attacks
+			local sAtkSingle = vAttack:gsub("^%d+%s(%a+)s", "%1");
+			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, sAtkSingle);
 		end
-	else
-		if sAttackLine:match("/%+") or sAttackLine:match("^%d+") then
-			sFullAtk = sAttackLine;
-			sAtk = sAttackLine;
-		else
-			sAtk = sAttackLine;
+		if vAttack:match(",") then
+			sAtk = sAtk:gsub(",.-%)", "");
 		end
 	end
 
 	return sAtk, sFullAtk;
+end
+
+function importHelperAttackOrCheck(sSource, sNew)
+	if sSource == sNew then
+		return sSource;
+	end
+
+	if sSource ~= "" then
+		sSource = sSource .. " or " .. sNew;
+	else
+		sSource = sNew;
+	end
+
+	return sSource;
 end
 
 function importHelperSpaceReach()
