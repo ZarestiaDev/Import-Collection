@@ -406,7 +406,7 @@ function importHelperSpells()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:match("Spell") or sLine:match("At Will") or sLine:match("Constant") then
+	if sLine:match("Spell") then
 		ImportNPCManager.importHelperSpellcasting();
 	else
 		ImportNPCManager.previousImportLine();
@@ -449,7 +449,7 @@ function importHelperSpellcasting()
 		end
 
 		local sSpellLevel = sLine:match("^%d+") or 0;
-		local sSpells = sLine:match("-(%w+.*)");
+		local sSpells = sLine:match("-%s?(%w+.*)") or "";
 		sSpells = sSpells:gsub("%(dc.-%)", "");
 		sSpells = sSpells:gsub("'", "");
 
@@ -497,7 +497,9 @@ function importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity)
 	local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. sSpellLevel, 0);
 	DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nCurrentQuantity + nQuantity);
 	
-	SpellManager.addSpell(nodeSpell, nodeSpellClass, tonumber(sSpellLevel));
+	-- Create childs beforehand, otherwise the addSpell() won't work
+	nodeSpellClass.createChild("levels.level" .. sSpellLevel .. ".spells");
+	SpellManager.addSpell(nodeSpell, nodeSpellClass, tonumber(sSpellLevel))
 end
 
 function importHelperAbilityScores()
