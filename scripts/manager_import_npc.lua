@@ -289,6 +289,7 @@ function importHelperAttack()
 	sMeleeAtk = sMeleeAtk:gsub("/%+.-%(", " (");
 	sMeleeAtk = sMeleeAtk:gsub("^%d+%s(%a+)s", "%1");
 	sRangedAtk = sRangedAtk:gsub("/%+.-%(", " (");
+	sRangedAtk = sRangedAtk:gsub("^%d+%s(%a+)s", "%1");
 	sRangedAtk = sRangedAtk:gsub("(%d+%s)%(", "%1ranged (");
 	sMeleeFullAtk = sMeleeFullAtk:gsub(",", " and");
 	sRangedFullAtk = sRangedFullAtk:gsub(",", " and");
@@ -300,14 +301,14 @@ function importHelperAttack()
 	sRangedFullAtk = StringManager.capitalize(sRangedFullAtk);
 
 	-- Merge Attacks
-	if sMeleeAtk and sRangedAtk ~= "" then
+	if sMeleeAtk ~= "" and sRangedAtk ~= "" then
 		DB.setValue(_tImportState.node, "atk", "string", sMeleeAtk .. " or " .. sRangedAtk);
 	else
 		DB.setValue(_tImportState.node, "atk", "string", sMeleeAtk .. sRangedAtk);
 	end
 
 	-- Merge Full Attacks
-	if sMeleeFullAtk and sRangedFullAtk ~= "" then
+	if sMeleeFullAtk ~= "" and sRangedFullAtk ~= "" then
 		DB.setValue(_tImportState.node, "fullatk", "string", sMeleeFullAtk .. " or " .. sRangedFullAtk);
 	else
 		DB.setValue(_tImportState.node, "fullatk", "string", sMeleeFullAtk .. sRangedFullAtk);
