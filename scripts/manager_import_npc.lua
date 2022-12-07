@@ -444,7 +444,7 @@ function importHelperSpellcasting()
 	while not _tImportState.sActiveLine:lower():match("^statistics") do
 		ImportNPCManager.nextImportLine();
 		local sLine = _tImportState.sActiveLine:lower();
-		if not sLine or sLine == "" or sLine:match("^statistics") then
+		if not sLine or sLine == "" or sLine:match("^statistics") or sLine:match("^tactics") then
 			ImportNPCManager.previousImportLine();
 			break;
 		elseif sLine:match("^spell") then
