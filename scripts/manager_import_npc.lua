@@ -246,14 +246,14 @@ end
 function importHelperTactics()
 	ImportNPCManager.nextImportLine();
 
-	if _tImportState.sActiveLine:lower():match("tactics") then
+	if _tImportState.sActiveLine:lower():match("^tactics") then
 		ImportNPCManager.addStatOutput("<h>Tactics</h>")
 
-		while not _tImportState.sActiveLine:lower():match("statistics") do
+		while not _tImportState.sActiveLine:lower():match("^statistics") do
 			ImportNPCManager.nextImportLine();
 
 			local sLine = _tImportState.sActiveLine;
-			if not sLine or sLine == "" or sLine:lower():match("statistics") then
+			if not sLine or sLine == "" or sLine:lower():match("^statistics") then
 				ImportNPCManager.previousImportLine();
 				break;
 			end
@@ -270,6 +270,7 @@ function importHelperAttack()
 	ImportNPCManager.nextImportLine();
 
 	local sMelee = _tImportState.sActiveLine:gsub("^Melee%s?", "");
+	sMelee = sMelee:gsub("&#215;", "x");
 	local sMeleeAtk, sMeleeFullAtk = importHelperAttackFormat(sMelee);
 	local sRangedAtk = "";
 	local sRangedFullAtk = "";
@@ -280,6 +281,7 @@ function importHelperAttack()
 	local sRanged = _tImportState.sActiveLine;
 	if sRanged:match("Ranged") then
 	 	sRanged = sRanged:gsub("^Ranged%s?", "");
+		sRanged = sRanged:gsub("&#215;", "x");
 		sRangedAtk, sRangedFullAtk = importHelperAttackFormat(sRanged);
 	else
 		ImportNPCManager.previousImportLine();
@@ -430,17 +432,19 @@ end
 
 function importHelperSpellcasting()
 	local nodeSpellClass = _tImportState.node.createChild("spellset").createChild();
-	local nCL = tonumber(_tImportState.sActiveLine:match("CL%s(%d+)")) or 0;
 	
 	DB.setValue(nodeSpellClass, "label", "string", _tImportState.sActiveLine:gsub("%s?%b()", ""));
-	DB.setValue(nodeSpellClass, "cl", "number", nCL);
+	DB.setValue(nodeSpellClass, "cl", "number", tonumber(_tImportState.sActiveLine:match("CL%s(%d+)")) or 0);
+	if _tImportState.sActiveLine:lower():match("known") then
+		DB.setValue(nodeSpellClass, "castertype", "string", "spontaneous");
+	end
 
 	local tModules = getLoadedModules();
 	
-	while not _tImportState.sActiveLine:lower():match("statistics") do
+	while not _tImportState.sActiveLine:lower():match("^statistics") do
 		ImportNPCManager.nextImportLine();
 		local sLine = _tImportState.sActiveLine:lower();
-		if not sLine or sLine == "" or sLine:match("statistics") then
+		if not sLine or sLine == "" or sLine:match("^statistics") then
 			ImportNPCManager.previousImportLine();
 			break;
 		elseif sLine:match("^spell") then
@@ -450,21 +454,22 @@ function importHelperSpellcasting()
 		end
 
 		local sSpellLevel = sLine:match("^%d+") or 0;
+		local nKnown = tonumber(sLine:match("%((%d)")) or 0;
 		local sSpells = sLine:match("-%s?(%w+.*)") or "";
 		sSpells = sSpells:gsub("%(dc.-%)", "");
 		sSpells = sSpells:gsub("'", "");
 
 		if sSpells:match(",") then
 			for _,sSpellName in ipairs(StringManager.splitByPattern(sSpells, ",")) do
-				ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName);
+				ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName, nKnown);
 			end
 		else
-			ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpells);
+			ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpells, nKnown);
 		end
 	end
 end
 
-function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName)
+function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName, nKnown)
 	local nQuantity = tonumber(sSpellName:match("(%d+)")) or 1;
 	sSpellName = sSpellName:gsub("%b()", "");
 	if sSpellName:match("^%s?mass") then
@@ -474,7 +479,7 @@ function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellNa
 	
 	local nodeSpellBook = DB.findNode("spelldesc." .. sSpellName:gsub("%s", "") .. '@*');
 	if nodeSpellBook then
-		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, sSpellLevel, nQuantity);
+		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, sSpellLevel, nQuantity, nKnown);
 		return;
 	end
 
@@ -485,7 +490,7 @@ function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellNa
 				local sModuleSpellName = DB.getValue(nodeSpell, "name", "");
 				if sModuleSpellName ~= '' then
 					if sModuleSpellName == sSpellName then
-						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity);
+						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity, nKnown);
 						break;
 					end
 				end
@@ -494,9 +499,13 @@ function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellNa
 	end
 end
 
-function importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity)
-	local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. sSpellLevel, 0);
-	DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nCurrentQuantity + nQuantity);
+function importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity, nKnown)
+	if nKnown > 0 then
+		DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nKnown);
+	else
+		local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. sSpellLevel, 0);
+		DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nCurrentQuantity + nQuantity);
+	end
 	
 	-- Create data beforehand, otherwise the addSpell() won't work
 	nodeSpellClass.createChild("levels.level" .. sSpellLevel .. ".spells");
