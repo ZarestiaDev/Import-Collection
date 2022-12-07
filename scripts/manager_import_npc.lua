@@ -497,9 +497,11 @@ function importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity)
 	local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. sSpellLevel, 0);
 	DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nCurrentQuantity + nQuantity);
 	
-	-- Create childs beforehand, otherwise the addSpell() won't work
+	-- Create data beforehand, otherwise the addSpell() won't work
 	nodeSpellClass.createChild("levels.level" .. sSpellLevel .. ".spells");
-	SpellManager.addSpell(nodeSpell, nodeSpellClass, tonumber(sSpellLevel))
+
+	local nodeNewSpell = SpellManager.addSpell(nodeSpell, nodeSpellClass, tonumber(sSpellLevel));
+	DB.setValue(nodeNewSpell, "prepared", "number", nQuantity);
 end
 
 function importHelperAbilityScores()
