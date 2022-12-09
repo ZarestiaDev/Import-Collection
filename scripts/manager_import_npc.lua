@@ -432,11 +432,15 @@ end
 
 function importHelperSpellcasting()
 	local nodeSpellClass = _tImportState.node.createChild("spellset").createChild();
+	local bSpellLike = false;
 	
 	DB.setValue(nodeSpellClass, "label", "string", _tImportState.sActiveLine:gsub("%s?%b()", ""));
 	DB.setValue(nodeSpellClass, "cl", "number", tonumber(_tImportState.sActiveLine:match("CL%s(%d+)")) or 0);
 	if _tImportState.sActiveLine:lower():match("known") then
 		DB.setValue(nodeSpellClass, "castertype", "string", "spontaneous");
+	end
+	if _tImportState.sActiveLine:lower():match("spell%-like") then
+		bSpellLike = true;
 	end
 
 	local tModules = getLoadedModules();
@@ -453,7 +457,7 @@ function importHelperSpellcasting()
 			break;
 		end
 
-		local sSpellLevel = sLine:match("^%d+") or 0;
+		local nSpellLevel = tonumber(sLine:match("^(%d+)")) or 0;
 		local nKnown = tonumber(sLine:match("%((%d)")) or 0;
 		local sSpells = sLine:match("-%s?(%w+.*)") or "";
 		sSpells = sSpells:gsub("%(dc.-%)", "");
@@ -461,16 +465,24 @@ function importHelperSpellcasting()
 
 		if sSpells:match(",") then
 			for _,sSpellName in ipairs(StringManager.splitByPattern(sSpells, ",")) do
-				ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName, nKnown);
+				ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellName, nKnown, bSpellLike);
 			end
 		else
-			ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpells, nKnown);
+			ImportNPCManager.importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpells, nKnown, bSpellLike);
 		end
 	end
 end
 
-function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellName, nKnown)
+function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellName, nKnown, bSpellLike)
 	local nQuantity = tonumber(sSpellName:match("(%d+)")) or 1;
+
+	if bSpellLike then
+		nQuantity = nSpellLevel;
+		if nQuantity < 1 then
+			nQuantity = 1;
+		end
+	end
+
 	sSpellName = sSpellName:gsub("%b()", "");
 	if sSpellName:match("^%s?mass") then
 		sSpellName = sSpellName:gsub("mass", "");
@@ -479,7 +491,7 @@ function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellNa
 	
 	local nodeSpellBook = DB.findNode("spelldesc." .. sSpellName:gsub("%s", "") .. '@*');
 	if nodeSpellBook then
-		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, sSpellLevel, nQuantity, nKnown);
+		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike);
 		return;
 	end
 
@@ -490,7 +502,7 @@ function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellNa
 				local sModuleSpellName = DB.getValue(nodeSpell, "name", "");
 				if sModuleSpellName ~= '' then
 					if sModuleSpellName == sSpellName then
-						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity, nKnown);
+						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike);
 						break;
 					end
 				end
@@ -499,18 +511,18 @@ function importHelperSearchSpell(nodeSpellClass, tModules, sSpellLevel, sSpellNa
 	end
 end
 
-function importHelperAddSpell(nodeSpell, nodeSpellClass, sSpellLevel, nQuantity, nKnown)
+function importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike)
 	if nKnown > 0 then
-		DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nKnown);
+		DB.setValue(nodeSpellClass, "availablelevel" .. tostring(nSpellLevel), "number", nKnown);
 	else
-		local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. sSpellLevel, 0);
-		DB.setValue(nodeSpellClass, "availablelevel" .. sSpellLevel, "number", nCurrentQuantity + nQuantity);
+		local nCurrentQuantity = DB.getValue(nodeSpellClass, "availablelevel" .. tostring(nSpellLevel), 0);
+		DB.setValue(nodeSpellClass, "availablelevel" .. tostring(nSpellLevel), "number", nCurrentQuantity + nQuantity);
 	end
 	
 	-- Create data beforehand, otherwise the addSpell() won't work
-	nodeSpellClass.createChild("levels.level" .. sSpellLevel .. ".spells");
+	nodeSpellClass.createChild("levels.level" .. tostring(nSpellLevel) .. ".spells");
 
-	local nodeNewSpell = SpellManager.addSpell(nodeSpell, nodeSpellClass, tonumber(sSpellLevel));
+	local nodeNewSpell = SpellManager.addSpell(nodeSpell, nodeSpellClass, nSpellLevel);
 	DB.setValue(nodeNewSpell, "prepared", "number", nQuantity);
 end
 
