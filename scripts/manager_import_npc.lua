@@ -355,13 +355,16 @@ end
 
 function importHelperAttackFormatOr(sAttackLine, sAtk, sFullAtk)
 	for _,vAttack in ipairs(StringManager.splitByPattern(sAttackLine, "%sor%s")) do
+		-- iterative full-attack "+12/+7/+2"
 		if vAttack:match("/%+") then
 			sFullAtk = ImportNPCManager.importHelperAttackOrCheck(sFullAtk, vAttack);
 			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, vAttack:gsub("/.-%(", " ("));
+		-- multiple single attacks "8 tentacles"
 		elseif vAttack:match("^%d+") then
 			sFullAtk = ImportNPCManager.importHelperAttackOrCheck(sFullAtk, vAttack);
 			-- Convert "2 Slams" into Slam for single attacks
 			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, vAttack:gsub("^%d+%s(%a+)s", "%1"));
+		-- single attack
 		else
 			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, vAttack);
 		end
