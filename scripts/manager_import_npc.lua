@@ -356,13 +356,14 @@ end
 function importHelperAttackFormatOr(sAttackLine, sAtk, sFullAtk)
 	for _,vAttack in ipairs(StringManager.splitByPattern(sAttackLine, "%sor%s")) do
 		if vAttack:match("/%+") then
-			sFullAtk = vAttack;
-			sAtk = vAttack:gsub("/.-%(", " (");
+			sFullAtk = ImportNPCManager.importHelperAttackOrCheck(sFullAtk, vAttack);
+			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, vAttack:gsub("/.-%(", " ("));
 		elseif vAttack:match("^%d+") then
 			sFullAtk = ImportNPCManager.importHelperAttackOrCheck(sFullAtk, vAttack);
 			-- Convert "2 Slams" into Slam for single attacks
-			local sAtkSingle = vAttack:gsub("^%d+%s(%a+)s", "%1");
-			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, sAtkSingle);
+			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, vAttack:gsub("^%d+%s(%a+)s", "%1"));
+		else
+			sAtk = ImportNPCManager.importHelperAttackOrCheck(sAtk, vAttack);
 		end
 		if vAttack:match(",") then
 			sAtk = sAtk:gsub(",.-%)", "");
