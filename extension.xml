@@ -3,7 +3,7 @@
 <root version="3.3" >
 	<properties>
 		<name>Feature: Import Collection</name>
-		<version>0.2</version>
+		<version>0.3</version>
 		<loadorder>50</loadorder>
 		<description>
 			<text>Import Collection</text>
@@ -15,7 +15,7 @@
 		</ruleset>
 	</properties>
 
-	<announcement text="PFRPG Import Collection - v0.2 by Zarestia" font="emotefont" />
+	<announcement text="https://forge.fantasygrounds.com/shop/items/931/view \nPFRPG Import Collection - v0.3 by Zarestia" font="emotefont" />
 
 	<base>
 	<!-- High-Level Scripts -->
