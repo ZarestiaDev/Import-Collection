@@ -34,6 +34,9 @@ function import2022(sStats, sDesc)
 	-- GENERAL
 	-- Assume Name/CR next
 	ImportNPCManager.importHelperNameCr();
+	-- Skip possible source and xp
+	ImportNPCManager.importHelperSkip("source");
+	ImportNPCManager.importHelperSkip("xp");
 	-- Assume Alignment/Size/Type next
 	ImportNPCManager.importHelperAlignmentSizeType();
 	-- Assume Initiative/Senses next
@@ -43,12 +46,13 @@ function import2022(sStats, sDesc)
 
 	-- DEFENSE
 	-- Assume Defense next
+	ImportNPCManager.importHelperSkip("defense");
 	ImportNPCManager.importHelperACHP();
 	ImportNPCManager.importHelperSaves();
 	ImportNPCManager.importHelperDefOptional();
 
 	-- OFFENSE
-	ImportNPCManager.nextImportLine();
+	ImportNPCManager.importHelperSkip("offense");
 	-- Assume Speed next
 	ImportNPCManager.importHelperSimpleLine("speed");
 	-- Assume Attacks next
@@ -62,6 +66,7 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperTactics();
 
 	-- STATISTICS
+	ImportNPCManager.importHelperSkip("statistics");
 	-- Assume Ability Scores next
 	ImportNPCManager.importHelperAbilityScores();
 	-- Assume BAB/CMB/CMD next
@@ -80,7 +85,7 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperGear();
 
 	-- ECOLOGY
-	ImportNPCManager.nextImportLine();
+	ImportNPCManager.importHelperSkip("ecology");
 	-- Assume Environment next (optional)
 	ImportNPCManager.importHelperSimpleLine("environment");
 	-- Assume Organization next (optional)
@@ -93,6 +98,8 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperSpecialAbilities();
 	-- Update Spellclass information
 	ImportNPCManager.finalizeSpellclass();
+	-- Update uppercase for some fields
+	ImportNPCManager.finalizeUppercase();
 	-- Update Description by adding the statblock text as well
 	ImportNPCManager.finalizeDescription();
 	-- Open new record window and matching campaign list
@@ -102,6 +109,14 @@ end
 --
 --	Import section helper functions
 --
+
+function importHelperSkip(sKeyword)
+	ImportNPCManager.nextImportLine();
+
+	if not _tImportState.sActiveLine:lower():match("^" .. sKeyword) then
+		ImportNPCManager.previousImportLine();
+	end
+end
 
 function importHelperSimpleLine(sCategory)
 	ImportNPCManager.nextImportLine();
@@ -157,13 +172,6 @@ end
 
 function importHelperAlignmentSizeType()
 	ImportNPCManager.nextImportLine();
-	-- skip possible XP and Source lines
-	if _tImportState.sActiveLine:match("^Source") then
-		ImportNPCManager.nextImportLine();
-	end
-	if _tImportState.sActiveLine:match("^XP") then
-		ImportNPCManager.nextImportLine();
-	end
 
 	-- Handle optional race/class
 	if _tImportState.sActiveLine:match("%d+") then
@@ -190,7 +198,7 @@ function importHelperInitiativeSenses()
 end
 
 function importHelperACHP()
-	ImportNPCManager.nextImportLine(2);
+	ImportNPCManager.nextImportLine();
 
 	-- Extract AC
 	local sLine = _tImportState.sActiveLine:lower();
@@ -235,7 +243,7 @@ function importHelperDefOptional()
 	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine;
-	if sLine:lower():match("offense") then
+	if sLine:lower():match("offense") or sLine:lower():match("speed") then
 		ImportNPCManager.previousImportLine();
 		return;
 	end
@@ -266,7 +274,7 @@ function importHelperTactics()
 			ImportNPCManager.nextImportLine();
 
 			local sLine = _tImportState.sActiveLine;
-			if not sLine or sLine == "" or sLine:lower():match("^statistics") then
+			if not sLine or sLine == "" or sLine:lower():match("^statistics") or sLine:lower():match("^str%s") then
 				ImportNPCManager.previousImportLine();
 				break;
 			end
@@ -469,7 +477,7 @@ function importHelperSpellcasting()
 		sLine = sLine:gsub("(%w)D", "%1");
 		sLine = sLine:lower();
 
-		if not sLine or sLine == "" or sLine:match("^statistics") or sLine:match("^tactics") then
+		if not sLine or sLine == "" or sLine:match("^statistics") or sLine:match("^tactics") or sLine:match("^str%s") then
 			ImportNPCManager.previousImportLine();
 			break;
 		elseif sLine:match("^spell") then
@@ -564,8 +572,7 @@ function importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity,
 end
 
 function importHelperAbilityScores()
-	-- skip STATISTICS
-	ImportNPCManager.nextImportLine(2);
+	ImportNPCManager.nextImportLine();
 
 	local sLine = _tImportState.sActiveLine:gsub("-", "0");
 	sLine = sLine:gsub("—", "0");
@@ -695,6 +702,13 @@ function finalizeSpellclass()
 	if nHighest == nInt then
 		DB.setValue(nodeSpellClass, "dc.ability", "string", "intelligence");
 	end
+end
+
+function finalizeUppercase()
+	DB.setValue(_tImportState.node, "feats", "string", StringManager.capitalizeAll(DB.getValue(_tImportState.node, "feats", "")));
+	DB.setValue(_tImportState.node, "skills", "string", StringManager.capitalizeAll(DB.getValue(_tImportState.node, "skills", "")));
+	DB.setValue(_tImportState.node, "languages", "string", StringManager.capitalizeAll(DB.getValue(_tImportState.node, "languages", "")));
+	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(DB.getValue(_tImportState.node, "specialqualities", "")));
 end
 
 function finalizeDescription()
