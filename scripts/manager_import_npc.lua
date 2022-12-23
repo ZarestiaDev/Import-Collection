@@ -495,15 +495,19 @@ function importHelperSpellcasting()
 end
 
 function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellName, nKnown, bSpellLike)
-	local nQuantity = tonumber(sSpellName:match("(%d+)")) or 1;
+	if sSpellName == "" then
+		return;
+	end
 
+	local nQuantity = tonumber(sSpellName:match("(%d+)")) or 1;
+	
 	if bSpellLike then
 		nQuantity = nSpellLevel;
 		if nQuantity < 1 then
 			nQuantity = 1;
 		end
 	end
-
+	
 	sSpellName = sSpellName:gsub("%b()", "");
 	if sSpellName:match("^%s?mass") then
 		sSpellName = sSpellName:gsub("mass", "");
@@ -511,22 +515,34 @@ function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellNa
 	end
 	
 	local nodeSpellBook = DB.findNode("spelldesc." .. sSpellName:gsub("%s", "") .. '@*');
+	if not nodeSpellBook then
+		-- Check for the spell without the first word for metamagic
+		local sSpellNameMM = sSpellName:gsub("^%s?.-%s", "");
+		nodeSpellBook = DB.findNode("spelldesc." .. sSpellNameMM:gsub("%s", "") .. '@*');
+	end
+
 	if nodeSpellBook then
 		ImportNPCManager.importHelperAddSpell(nodeSpellBook, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike);
 		return;
 	end
-
+	
 	for _,sModule in pairs(tModules) do
 		local nodeSpellModule = DB.findNode("reference.spells" .. "@" .. sModule);
-		if nodeSpellModule then
-			for _,nodeSpell in pairs(nodeSpellModule.getChildren()) do
-				local sModuleSpellName = DB.getValue(nodeSpell, "name", "");
-				if sModuleSpellName ~= '' then
-					if sModuleSpellName == sSpellName then
-						ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike);
-						break;
-					end
-				end
+		if not nodeSpellModule then
+			return;
+		end
+		
+		for _,nodeSpell in pairs(nodeSpellModule.getChildren()) do
+			local sModuleSpellName = DB.getValue(nodeSpell, "name", "");
+			if sModuleSpellName == "" then
+				return;
+			end
+			if sModuleSpellName == sSpellName then
+				ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike);
+				break;
+			elseif sModuleSpellName == sSpellName:gsub("^%s?.-%s", "") then
+				ImportNPCManager.importHelperAddSpell(nodeSpell, nodeSpellClass, nSpellLevel, nQuantity, nKnown, bSpellLike);
+				break;
 			end
 		end
 	end
