@@ -464,7 +464,11 @@ function importHelperSpellcasting()
 	
 	while not _tImportState.sActiveLine:lower():match("^statistics") do
 		ImportNPCManager.nextImportLine();
-		local sLine = _tImportState.sActiveLine:lower();
+		local sLine = _tImportState.sActiveLine;
+		-- get rid of D in domain spells
+		sLine = sLine:gsub("(%w)D", "%1");
+		sLine = sLine:lower();
+
 		if not sLine or sLine == "" or sLine:match("^statistics") or sLine:match("^tactics") then
 			ImportNPCManager.previousImportLine();
 			break;
