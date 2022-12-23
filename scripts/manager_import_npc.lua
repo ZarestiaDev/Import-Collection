@@ -120,6 +120,19 @@ function importHelperSimpleLine(sCategory)
 	end
 end
 
+function importHelperSQjoin(sNew)
+	local sSQ = DB.getValue(_tImportState.node, "specialqualities", "");
+	sNew = sNew:gsub("^%s", "");
+
+	if sSQ ~= "" then
+		sSQ = sSQ .. ", " .. sNew;
+	else
+		sSQ = sNew;
+	end
+
+	DB.setValue(_tImportState.node, "specialqualities", "string", sSQ);
+end
+
 function importHelperNameCr()
 	ImportNPCManager.nextImportLine();
 
@@ -191,7 +204,7 @@ function importHelperACHP()
 	-- Handle optional Regeneration
 	if sRemainder:match("regeneration") then
 		local sRegeneration = sRemainder:match("(regeneration%s%d+)");
-		DB.setValue(_tImportState.node, "specialqualities", "string", sRegeneration);
+		ImportNPCManager.importHelperSQjoin(sRegeneration);
 	end
 
 	DB.setValue(_tImportState.node, "ac", "string", sAC);
@@ -208,6 +221,11 @@ function importHelperSaves()
 	local nRef = tonumber(sLine:match("Ref%s(%-?%+?%d+)")) or 0;
 	local nWill = tonumber(sLine:match("Will%s(%-?%+?%d+)")) or 0;
 
+	if sLine:match(";") then
+		local aLines = StringManager.splitByPattern(sLine, ";");
+		ImportNPCManager.importHelperSQjoin(aLines[2]);
+	end
+
 	DB.setValue(_tImportState.node, "fortitudesave", "number", nFort);
 	DB.setValue(_tImportState.node, "reflexsave", "number", nRef);
 	DB.setValue(_tImportState.node, "willsave", "number", nWill);
@@ -220,11 +238,6 @@ function importHelperDefOptional()
 	if sLine:lower():match("offense") then
 		ImportNPCManager.previousImportLine();
 		return;
-	end
-
-	local sExistingSQ = DB.getValue(_tImportState.node, "specialqualities", "");
-	if sExistingSQ ~= "" then
-		sExistingSQ = sExistingSQ .. ", ";
 	end
 
 	-- check optional Weaknesses
@@ -240,7 +253,7 @@ function importHelperDefOptional()
 	sLine = sLine:gsub("Defensive%sAbilities%s", "");
 	sLine = sLine:gsub("Weaknesses%s", "");
 
-	DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalize(sExistingSQ .. sLine));
+	ImportNPCManager.importHelperSQjoin(sLine);
 end
 
 function importHelperTactics()
@@ -556,12 +569,7 @@ function importHelperSQ()
 	ImportNPCManager.nextImportLine();
 	if _tImportState.sActiveLine:match("^SQ") then
 		local sSQ = _tImportState.sActiveLine:gsub("^SQ%s", "");
-		local sExistingSQ = DB.getValue(_tImportState.node, "specialqualities", "");
-		if sExistingSQ ~= "" then
-			sSQ = sExistingSQ .. ", " .. sSQ;
-		end
-
-		DB.setValue(_tImportState.node, "specialqualities", "string", StringManager.capitalizeAll(sSQ));
+		ImportNPCManager.importHelperSQjoin(sSQ);
 	else
 		ImportNPCManager.previousImportLine();
 	end
