@@ -540,7 +540,7 @@ function importHelperSearchSpell(nodeSpellClass, tModules, nSpellLevel, sSpellNa
 			return;
 		end
 		
-		for _,nodeSpell in pairs(nodeSpellModule.getChildren()) do
+		for _,nodeSpell in ipairs(DB.getChildList(nodeSpellModule)) do
 			local sModuleSpellName = DB.getValue(nodeSpell, "name", "");
 			if sModuleSpellName == "" then
 				return;
@@ -679,7 +679,7 @@ function addStatOutput(s)
 end
 
 function finalizeSpellclass()
-	local nodeSpellset = _tImportState.node.getChild("spellset");
+	local nodeSpellset = DB.getChild(_tImportState.node, "spellset");
 	
 	if not nodeSpellset then
 		return;
@@ -691,7 +691,7 @@ function finalizeSpellclass()
 
 	local nHighest = math.max(nInt, nWis, nCha);
 
-	local nodeSpellClass = nodeSpellset.getChild("id-00001");
+	local nodeSpellClass = DB.getChild(nodeSpellset, "id-00001");
 
 	if nHighest == nWis then
 		DB.setValue(nodeSpellClass, "dc.ability", "string", "wisdom");
