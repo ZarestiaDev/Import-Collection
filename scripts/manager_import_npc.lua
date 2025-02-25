@@ -5,21 +5,17 @@
 
 local _tImportState = {};
 
-function onInit()
-	Interface.onDesktopInit = onDesktopInit;
+function onTabletopInit()
+	ImportNPCManager.registerImportModes();
 end
-function onDesktopInit()
-	local sLabel = Interface.getString("import_mode");
-	ImportUtilityManager.registerImportMode("npc", "2022", sLabel, ImportNPCManager.import2022);
+function registerImportModes()
+	ImportUtilityManager.registerImportMode("npc", "2025", Interface.getString("import_mode"), ImportNPCManager.import2025);
 end
 
 function performImport(w)
-	local sMode = w.mode.getSelectedValue();
-	local tImportMode = ImportUtilityManager.getImportMode("npc", sMode);
+	local tImportMode = ImportUtilityManager.getImportMode("npc", w.mode.getSelectedValue());
 	if tImportMode then
-		local sStats = w.statblock.getValue();
-		local sDesc = w.description.getValue();
-		tImportMode.fn(sStats, sDesc);
+		tImportMode.fn(w.statblock.getValue(), w.description.getValue());
 	end
 end
 
