@@ -9,7 +9,7 @@
 	<windowclass name="import_npc">
 		<frame>utilitybox</frame>
 		<placement>
-			<size width="1000" height="600"/>
+			<nosave />
 		</placement>
 		<sizelimits>
 			<minimum width="800" height="600"/>
@@ -21,43 +21,25 @@
 			end
 		</script>
 		<sheetdata>
-			<windowtitlebar name="title">
-				<resource>import_npc_title</resource>
-			</windowtitlebar>
- 			<anchor_title_utilitybox name="contentanchor" />
+			<windowtitlebar_utilitybox name="title" />
+			<windowmenubar_utilitybox name="menubar" />
 
-			<anchor_bottom_utilitybox_buttons name="bottomanchor" />
+ 			<anchor_content_utilitybox_top />
+			<anchor_content_utilitybox_bottom />
 
-			<contentarea_import name="contentframe" />
-
-			<simpleftc name="statblock">
-				<anchored to="contentframe" position="over">
-					<right anchor="center" offset="-20" />
-					<bottom offset="-40" />
-				</anchored>
-				<frame name="groupbox" offset="15,15,20,15" />
-				<empty textres="ft_empty_import_statblock_npc" />
-			</simpleftc>
-			<scrollbar>
-				<anchored to="statblock" />
-				<target>statblock</target>
-			</scrollbar>		
-			
-			<simpleftc name="description">
-				<anchored to="contentframe" position="over">
-					<left anchor="center" offset="20" />
-					<bottom offset="-40" />
-				</anchored>
-				<frame name="groupbox" offset="15,15,20,15" />
-				<empty textres="ft_empty_import_description_npc" />
-			</simpleftc>		
-			<scrollbar>
-				<anchored to="description" />
-				<target>description</target>
-			</scrollbar>		
-
+			<button_text_content_center_bottom name="button_import">
+				<state textres="button_import" />
+				<script>
+					function onButtonPress()
+						ImportNPCManager.performImport(window);
+					end
+				</script>
+			</button_text_content_center_bottom>			
 			<label name="mode_label">
-				<anchored to="contentframe" position="insidebottomleft" offset="10,0" />
+				<anchored to="bottomanchor">
+					<bottom relation="relative" offset="-10" postoffset="-10" />
+					<left offset="20" />
+				</anchored>
 				<frame>
 					<name>fieldlight</name>
 					<offset>17,5,17,5</offset>
@@ -65,21 +47,39 @@
 				<static textres="import_label_mode" />
 			</label>
 			<comboboxc name="mode">
-				<anchored to="contentframe" position="insidebottom" height="20">
-					<left parent="mode_label" anchor="right" offset="20" />
+				<anchored to="mode_label" position="righthigh" offset="20,0" height="20">
+					<right parent="contentanchor" offset="-20" />
 				</anchored>
 			</comboboxc>
 
-			<button_import_window name="button_import">
-				<script>
-					function onButtonPress()
-						ImportNPCManager.performImport(window);
-					end
-				</script>
-			</button_import_window>			
+			<area_content name="contentarea" />
+
+			<simpleftc name="statblock">
+				<anchored to="contentarea" position="over" offset="-15,-15">
+					<right anchor="center" offset="-25" />
+				</anchored>
+				<frame name="groupbox" offset="15,15,25,15" />
+				<empty textres="ft_empty_import_npc_statblock" />
+			</simpleftc>
+			<scrollbar>
+				<anchored to="statblock" />
+				<target>statblock</target>
+			</scrollbar>		
+			
+			<simpleftc name="description">
+				<anchored to="contentarea" position="over" offset="-15,-15">
+					<left anchor="center" offset="15" />
+					<right offset="-25" />
+				</anchored>
+				<frame name="groupbox" offset="15,15,25,15" />
+				<empty textres="ft_empty_import_npc_description" />
+			</simpleftc>		
+			<scrollbar>
+				<anchored to="description" />
+				<target>description</target>
+			</scrollbar>		
 
 			<resize_utilitybox />
-			<close_utilitybox />
 		</sheetdata>
 	</windowclass>
 </root>

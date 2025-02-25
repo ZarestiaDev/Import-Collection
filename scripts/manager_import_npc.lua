@@ -9,7 +9,7 @@ function onInit()
 	Interface.onDesktopInit = onDesktopInit;
 end
 function onDesktopInit()
-	local sLabel = Interface.getString("import_mode_2022");
+	local sLabel = Interface.getString("import_mode");
 	ImportUtilityManager.registerImportMode("npc", "2022", sLabel, ImportNPCManager.import2022);
 end
 

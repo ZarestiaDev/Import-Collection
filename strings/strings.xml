@@ -1,12 +1,12 @@
 <root>
 	<!-- Import -->
-	<string name="import_npc_title">Import - NPC</string>
-	<string name="import_mode_2022">2023 - Archives of Nethys</string>
+	<string name="import_npc_window_title">Import - NPC</string>
+	<string name="import_mode">2025 - Archives of Nethys</string>
 
-	<string name="ft_empty_import_statblock_npc">Paste the NPC statblock text here.
+	<string name="ft_empty_import_npc_statblock">Paste the NPC statblock text here.
 				
 	Formatting is NOT preserved.</string>
-	<string name="ft_empty_import_description_npc">Paste the NPC description text here.
+	<string name="ft_empty_import_npc_description">Paste the NPC description text here.
 					
 	Formatting is NOT preserved.</string>
 </root>
