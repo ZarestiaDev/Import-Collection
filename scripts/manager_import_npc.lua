@@ -85,7 +85,8 @@ function import2022(sStats, sDesc)
 	ImportNPCManager.importHelperGear();
 
 	-- ECOLOGY
-	ImportNPCManager.importHelperSkip("ecology");
+	-- Assume Ecology next (optional)
+	ImportNPCManager.importHelperSimpleLine("ecology");
 	-- Assume Environment next (optional)
 	ImportNPCManager.importHelperSimpleLine("environment");
 	-- Assume Organization next (optional)
